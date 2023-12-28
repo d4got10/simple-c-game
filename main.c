@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "raylib.h"
 #include "raymath.h"
+#include <stdlib.h>
 
 typedef struct {
     Vector2 position;
@@ -43,7 +44,10 @@ bool rects_are_colliding(Vector2 first_position, Vector2 first_size, Vector2 sec
 
 //graphics
 void draw_graphics(GameState);
+void draw_player(GameState game_state);
 void draw_platforms(GameState game_state);
+void draw_ground(GameState game_state);
+void draw_debug_info(GameState game_state);
 
 //utils
 Vector2 world_to_view(Vector2 world_position, Vector2 camera_position);
@@ -158,16 +162,23 @@ GameState simulate_collisions(GameState game_state)
     MyTransform* platforms = level_info.platforms;
     
     for(int i = 0; i < level_info.platform_count; i++){
-        if(player.transform.position.y + player.transform.size.y / 2 < platforms[i].position.y) continue;
         if(!rects_are_colliding(platforms[i].position, platforms[i].size, 
                                 player_next_position, player.transform.size)) continue;
         
-        player.velocity.y = 0;
-        player.transform.position.y = platforms[i].position.y 
-                            + platforms[i].size.y / 2 
-                            + player.transform.size.y / 2 - 1;
-        player.is_grounded = true;
-                            
+        float next_position_bottom_y = player_next_position.y - player.transform.size.y / 2;
+        float curr_position_bottom_y = player.transform.position.y - player.transform.size.y / 2;
+        float platform_top_position = platforms[i].position.y + platforms[i].size.y / 2;
+        
+        if(next_position_bottom_y < platform_top_position 
+           && curr_position_bottom_y >= platform_top_position) 
+        {   
+            player.velocity.y = 0;
+            player.transform.position.y = platforms[i].position.y 
+                                + platforms[i].size.y / 2
+                                + player.transform.size.y / 2;
+            player.is_grounded = true;
+        }
+        
         //printf("hit\n");
     }
     
@@ -222,41 +233,53 @@ void draw_graphics(GameState game_state)
         BeginDrawing();
 
         ClearBackground(GRAY);
-        MyTransform player_transform = game_state.player.transform;
-        Vector2 player_view_position = world_to_view(player_transform.position, 
-                                                     game_state.camera_position);
-        DrawRectangle(player_view_position.x - player_transform.size.x / 2, 
-                      player_view_position.y - player_transform.size.y / 2, 
-                      player_transform.size.x, 
-                      player_transform.size.y, 
-                      YELLOW);
-                      
-        int ground_level = game_state.level_info.ground_level; 
-        int height = GetScreenHeight();
-        int width = GetScreenWidth();
         
-        Vector2 ground_position = {
-            x: game_state.player.transform.position.x - width / 2, 
-            y: ground_level - game_state.player.transform.size.y / 2
-        };
-        Vector2 ground_view_position = world_to_view(ground_position, game_state.camera_position);
-        DrawRectangle(ground_view_position.x, ground_view_position.y, width, height, BROWN);
-        
+        draw_player(game_state);
+        draw_ground(game_state);
         draw_platforms(game_state);
         
-        char text[64];
-                
-        sprintf(text, "Position: (%.2f, %.2f)", 
-                          player_transform.position.x, 
-                          player_transform.position.y);
-        DrawText(text, 0, 0, 20, WHITE);
-        
-        DrawText(TextFormat("Velocity: (%.2f, %.2f)", 
-                            game_state.player.velocity.x,
-                            game_state.player.velocity.y), 
-                            0, 20, 20, WHITE);
+        draw_debug_info(game_state);
         
         EndDrawing();
+}
+
+void draw_player(GameState game_state)
+{
+    MyTransform player_transform = game_state.player.transform;
+    Vector2 player_view_position = world_to_view(player_transform.position, 
+                                                 game_state.camera_position);
+    DrawRectangle(player_view_position.x - player_transform.size.x / 2, 
+                  player_view_position.y - player_transform.size.y / 2, 
+                  player_transform.size.x, 
+                  player_transform.size.y, 
+                  YELLOW);
+}
+
+void draw_debug_info(GameState game_state)
+{
+    DrawText(TextFormat("Position: (%.2f, %.2f)", 
+                      game_state.player.transform.position.x, 
+                      game_state.player.transform.position.y),
+             0, 0, 20, WHITE);
+    
+    DrawText(TextFormat("Velocity: (%.2f, %.2f)", 
+                        game_state.player.velocity.x,
+                        game_state.player.velocity.y), 
+             0, 20, 20, WHITE);
+}
+
+void draw_ground(GameState game_state)
+{
+    int ground_level = game_state.level_info.ground_level; 
+    int height = GetScreenHeight();
+    int width = GetScreenWidth();
+    
+    Vector2 ground_position = {
+        x: game_state.player.transform.position.x - width / 2, 
+        y: ground_level - game_state.player.transform.size.y / 2
+    };
+    Vector2 ground_view_position = world_to_view(ground_position, game_state.camera_position);
+    DrawRectangle(ground_view_position.x, ground_view_position.y, width, height, BROWN);
 }
 
 void draw_platforms(GameState game_state)
