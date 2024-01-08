@@ -2,6 +2,9 @@
 #include "raylib.h"
 #include "raymath.h"
 #include <stdlib.h>
+#include <string.h>
+
+#define DEBUG
 
 typedef struct {
     Vector2 position;
@@ -33,6 +36,17 @@ typedef struct{
     float simulation_step;
 } GameState;
 
+typedef struct{
+    const char* path;
+} Resource;
+
+typedef struct {
+    Resource player;
+} ResourceContainer;
+
+//resources
+ResourceContainer load_resources(const char* base_path);
+
 //input
 GameState apply_input(GameState);
 
@@ -53,13 +67,22 @@ void draw_debug_info(GameState game_state);
 Vector2 world_to_view(Vector2 world_position, Vector2 camera_position);
 Vector2 view_to_world(Vector2 view_position, Vector2 camera_position);
 
-int main(void) 
+int main(void)
 {   
     const int screen_width = 800;
     const int screen_height = 450;
     
     InitWindow(screen_width, screen_height, "My Window");
     SetTargetFPS(60);
+    
+    const char *working_directory = GetWorkingDirectory();
+    if (working_directory == NULL) {
+        printf("Failed to get working directory.\n");
+        return 1;
+    }
+    
+    const char *resources_directory = TextFormat("%s\\resources", working_directory);
+    ResourceContainer resources_container = load_resources(resources_directory);
     
     Player player = {
         transform: {
@@ -95,7 +118,6 @@ int main(void)
         level_info: level_info,
         simulation_step: 0.02f
     };
-    
     
     while(!WindowShouldClose())
     {
@@ -187,6 +209,18 @@ GameState simulate_collisions(GameState game_state)
     return game_state;
 }
 
+ResourceContainer load_resources(const char* base_path)
+{
+    printf("loading resources...\n");
+    ResourceContainer resource_container = {
+        player: {
+            path: TextFormat("%s\\player.png", base_path)
+        }
+    };
+    printf("resources loaded successfully!\n");
+    return resource_container;
+}
+
 bool rects_are_colliding(Vector2 first_position,
                          Vector2 first_size,
                          Vector2 second_position,
@@ -257,15 +291,15 @@ void draw_player(GameState game_state)
 
 void draw_debug_info(GameState game_state)
 {
-    DrawText(TextFormat("Position: (%.2f, %.2f)", 
+    const char* position_text = TextFormat("Position: (%.2f, %.2f)", 
                       game_state.player.transform.position.x, 
-                      game_state.player.transform.position.y),
-             0, 0, 20, WHITE);
+                      game_state.player.transform.position.y);
+    DrawText(position_text, 0, 0, 20, WHITE);
     
-    DrawText(TextFormat("Velocity: (%.2f, %.2f)", 
+    const char* velocity_text = TextFormat("Velocity: (%.2f, %.2f)", 
                         game_state.player.velocity.x,
-                        game_state.player.velocity.y), 
-             0, 20, 20, WHITE);
+                        game_state.player.velocity.y);
+    DrawText(velocity_text, 0, 20, 20, WHITE);
 }
 
 void draw_ground(GameState game_state)
