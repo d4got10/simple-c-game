@@ -1,4 +1,5 @@
 #include "resources.h"
+#include <stdio.h>
 
 ResourceContainer load_resources(const char* base_path)
 {

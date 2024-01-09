@@ -9,18 +9,34 @@
 #include "resources.h"
 #include <stdlib.h>
 
+GameState create_state();
+
 int main(void)
 {
-    const int screen_width = 800;
-    const int screen_height = 450;
+    const int screen_width = 1200;
+    const int screen_height = 800;
 
     InitWindow(screen_width, screen_height, "My Window");
     SetTargetFPS(60);
 
+    GameState game_state = create_state();
+
+    while(!WindowShouldClose())
+    {
+        game_state = apply_input(game_state);
+        simulate(&game_state);
+        draw_graphics(game_state);
+    }
+
+    return 0;
+}
+
+GameState create_state()
+{
     const char *working_directory = GetWorkingDirectory();
     if (working_directory == NULL) {
         printf("Failed to get working directory.\n");
-        return 1;
+        return CLITERAL(GameState){};
     }
 
     const char *resources_directory = TextFormat("%s\\resources", working_directory);
@@ -62,13 +78,5 @@ int main(void)
         simulation_step: 0.02f
     };
 
-    while(!WindowShouldClose())
-    {
-        game_state = apply_input(game_state);
-        game_state = simulate(game_state);
-        draw_graphics(game_state);
-    }
-
-    return 0;
+    return game_state;
 }
-

@@ -15,6 +15,7 @@ typedef struct {
     float horizontal_steering_force;
     float jump_velocity;
     bool wants_to_jump;
+    bool wants_to_drop;
     bool is_grounded;
 } Player;
 

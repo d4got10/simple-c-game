@@ -11,6 +11,7 @@ GameState apply_input(GameState game_state)
     if (IsKeyDown(KEY_S)) game_state.level_info.ground_level -= 10.0f;
 
     player.wants_to_jump = IsKeyDown(KEY_UP);
+    player.wants_to_drop = IsKeyPressed(KEY_DOWN);
 
     game_state.player = player;
 
