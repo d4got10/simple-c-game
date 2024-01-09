@@ -30,19 +30,22 @@ typedef struct {
 } LevelInfo;
 
 typedef struct{
+    const char* path;
+    Texture2D texture;
+} Resource;
+
+typedef struct {
+    Resource player;
+    Resource platform;
+} ResourceContainer;
+
+typedef struct{
+    ResourceContainer resources;
     Player player;
     Vector2 camera_position;
     LevelInfo level_info;
     float simulation_step;
 } GameState;
-
-typedef struct{
-    const char* path;
-} Resource;
-
-typedef struct {
-    Resource player;
-} ResourceContainer;
 
 //resources
 ResourceContainer load_resources(const char* base_path);
@@ -82,7 +85,7 @@ int main(void)
     }
     
     const char *resources_directory = TextFormat("%s\\resources", working_directory);
-    ResourceContainer resources_container = load_resources(resources_directory);
+    ResourceContainer resources = load_resources(resources_directory);
     
     Player player = {
         transform: {
@@ -113,6 +116,7 @@ int main(void)
     
     GameState game_state = 
     {
+        resources: resources,
         player: player,
         camera_position: {},
         level_info: level_info,
@@ -212,11 +216,18 @@ GameState simulate_collisions(GameState game_state)
 ResourceContainer load_resources(const char* base_path)
 {
     printf("loading resources...\n");
+    
     ResourceContainer resource_container = {
         player: {
             path: TextFormat("%s\\player.png", base_path)
-        }
+        },
+        platform: {
+            path: TextFormat("%s\\platform.png", base_path)
+        },
     };
+    resource_container.player.texture = LoadTexture(resource_container.player.path);
+    resource_container.platform.texture = LoadTexture(resource_container.platform.path);
+    
     printf("resources loaded successfully!\n");
     return resource_container;
 }
@@ -268,9 +279,9 @@ void draw_graphics(GameState game_state)
 
         ClearBackground(GRAY);
         
-        draw_player(game_state);
         draw_ground(game_state);
         draw_platforms(game_state);
+        draw_player(game_state);
         
         draw_debug_info(game_state);
         
@@ -282,11 +293,15 @@ void draw_player(GameState game_state)
     MyTransform player_transform = game_state.player.transform;
     Vector2 player_view_position = world_to_view(player_transform.position, 
                                                  game_state.camera_position);
-    DrawRectangle(player_view_position.x - player_transform.size.x / 2, 
-                  player_view_position.y - player_transform.size.y / 2, 
-                  player_transform.size.x, 
-                  player_transform.size.y, 
-                  YELLOW);
+    Vector2 pos = {
+        x: player_view_position.x - player_transform.size.x / 2,
+        y: player_view_position.y - player_transform.size.y / 2,
+    };
+    
+    Texture2D player_texture = game_state.resources.player.texture;
+    float scale = fminf(player_transform.size.x / player_texture.width,
+                        player_transform.size.y / player_texture.height);
+    DrawTextureEx(player_texture, pos, 0.0, scale, WHITE);
 }
 
 void draw_debug_info(GameState game_state)
@@ -323,12 +338,17 @@ void draw_platforms(GameState game_state)
     int n = level_info.platform_count;
     // printf("%d\n", sizeof(MyTransform));
     for(int i = 0; i < n; i++){
-        Vector2 view_position = world_to_view(platforms[i].position, game_state.camera_position);
-        DrawRectangle(view_position.x - platforms[i].size.x / 2,
-                      view_position.y - platforms[i].size.y / 2,
-                      platforms[i].size.x,
-                      platforms[i].size.y,
-                      BROWN);
+        Vector2 view_position = world_to_view(platforms[i].position, 
+                                              game_state.camera_position);
+        Vector2 pos = {
+            x: view_position.x - platforms[i].size.x / 2,
+            y: view_position.y - platforms[i].size.y / 2,
+        };
+        Texture2D platform_texture = game_state.resources.platform.texture;
+        float scale = fminf(platforms[i].size.x / platform_texture.width,
+                            platforms[i].size.y / platform_texture.height);
+                            
+        DrawTextureEx(platform_texture, pos, 0.0, scale, WHITE);
     }
 }
 
@@ -341,7 +361,7 @@ Vector2 world_to_view(Vector2 world_position, Vector2 camera_position)
         x: screen_width / 2 + (world_position.x - camera_position.x),
         y: screen_height / 2 - (world_position.y - camera_position.y)
     };
-
+    
     //printf("world_to_view: (%f %f) -> (%f %f)\n", world_position.x, world_position.y, view_position.x, view_position.y);
     
     return view_position;
