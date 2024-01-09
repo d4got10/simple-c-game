@@ -63,19 +63,28 @@ void draw_ground(GameState game_state)
 void draw_platforms(GameState game_state)
 {
     LevelInfo level_info = game_state.level_info;
-    MyTransform* platforms = level_info.platforms;
+    Platform* platforms = level_info.platforms;
     int n = level_info.platform_count;
     // printf("%d\n", sizeof(MyTransform));
     for(int i = 0; i < n; i++){
-        Vector2 view_position = world_to_view(platforms[i].position,
+        Vector2 view_position = world_to_view(platforms[i].transform.position,
                                               game_state.camera_position);
         Vector2 pos = {
-            x: view_position.x - platforms[i].size.x / 2,
-            y: view_position.y - platforms[i].size.y / 2,
+            x: view_position.x - platforms[i].transform.size.x / 2,
+            y: view_position.y - platforms[i].transform.size.y / 2,
         };
-        Texture2D platform_texture = game_state.resources.platform.texture;
-        float scale = fminf(platforms[i].size.x / platform_texture.width,
-                            platforms[i].size.y / platform_texture.height);
+        Texture2D platform_texture;
+        switch (platforms[i].type) {
+            case DEFAULT:
+                platform_texture = game_state.resources.platform.texture;
+                break;
+            case JUMPER:
+                platform_texture = game_state.resources.platform_jumper.texture;
+                break;
+        }
+
+        float scale = fminf(platforms[i].transform.size.x / platform_texture.width,
+                            platforms[i].transform.size.y / platform_texture.height);
 
         DrawTextureEx(platform_texture, pos, 0.0, scale, WHITE);
     }

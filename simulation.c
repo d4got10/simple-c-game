@@ -12,7 +12,7 @@ void camera_follow_player(GameState* game_state)
                                          player.transform.position.y + 175);
 }
 
-void simulate_collisions(GameState* game_state)
+void simulate_platform_collisions(GameState* game_state)
 {
     Player player = game_state->player;
     if(player.velocity.y > 0 || player.wants_to_drop)
@@ -23,35 +23,75 @@ void simulate_collisions(GameState* game_state)
     Vector2 movement = Vector2Scale(player.velocity, game_state->simulation_step);
     Vector2 player_next_position = Vector2Add(player.transform.position, movement);
 
-    MyTransform* platforms = level_info.platforms;
+    Platform* platforms = level_info.platforms;
     for(int i = 0; i < level_info.platform_count; i++){
-        if(!rects_are_colliding(platforms[i].position, platforms[i].size,
+        if(!rects_are_colliding(platforms[i].transform.position, platforms[i].transform.size,
                                 player_next_position, player.transform.size)) continue;
 
         float next_position_bottom_y = player_next_position.y - player.transform.size.y / 2;
         float curr_position_bottom_y = player.transform.position.y - player.transform.size.y / 2;
-        float platform_top_position = platforms[i].position.y + platforms[i].size.y / 2;
+        float platform_top_position = platforms[i].transform.position.y + platforms[i].transform.size.y / 2;
 
         if(next_position_bottom_y < platform_top_position
            && curr_position_bottom_y >= platform_top_position)
         {
-            player.velocity.y = 0;
-            player.transform.position.y = platforms[i].position.y
-                                + platforms[i].size.y / 2
-                                + player.transform.size.y / 2;
-            player.is_grounded = true;
+            if (platforms[i].type == DEFAULT) {
+                player.velocity.y = 0;
+                player.transform.position.y = platforms[i].transform.position.y
+                                    + platforms[i].transform.size.y / 2
+                                    + player.transform.size.y / 2;
+                player.is_grounded = true;
+            } else if (platforms[i].type == JUMPER) {
+                player.velocity.y = 1500;
+                player.transform.position.y = platforms[i].transform.position.y
+                                    + platforms[i].transform.size.y / 2
+                                    + player.transform.size.y / 2;
+            }
+
         }
 
         //printf("hit\n");
     }
-
-    //printf("%f\n", player.velocity.y);
     game_state->player = player;
 }
 
-void simulate(GameState* game_state)
+void simulate_ground_collision(GameState* game_state)
 {
     LevelInfo level_info = game_state->level_info;
+    Player player = game_state->player;
+    Vector2 movement = Vector2Scale(player.velocity, game_state->simulation_step);
+    Vector2 player_next_position = Vector2Add(player.transform.position, movement);
+
+    if (player.velocity.y > 0 || player_next_position.y > level_info.ground_level){
+        return;
+    }
+
+    player.transform.position.y = level_info.ground_level - 1;
+    player.velocity.y = 0;
+    player.is_grounded = true;
+
+    game_state->player = player;
+}
+
+void apply_velocity_to_player_position(GameState* game_state)
+{
+    float simulation_step = game_state->simulation_step;
+    Player player = game_state->player;
+    Vector2 movement = Vector2Scale(player.velocity, simulation_step);
+    player.transform.position = Vector2Add(player.transform.position, movement);
+    game_state->player = player;
+}
+
+void apply_gravity_to_player(GameState* game_state)
+{
+    LevelInfo level_info = game_state->level_info;
+    float simulation_step = game_state->simulation_step;
+
+    game_state->player.velocity.y += level_info.gravity_force * simulation_step;
+}
+
+void apply_player_input(GameState* game_state)
+{
     Player player = game_state->player;
     float simulation_step = game_state->simulation_step;
 
@@ -60,28 +100,32 @@ void simulate(GameState* game_state)
     player.velocity.x += steering;
     player.velocity.x = Clamp(player.velocity.x, -player.max_horizontal_speed, player.max_horizontal_speed);
 
-    if(player.wants_to_jump && player.is_grounded)
+    if(player.wants_to_jump && player.is_grounded){
         player.velocity.y += player.jump_velocity;
-    player.velocity.y += level_info.gravity_force * simulation_step;
-
-    Vector2 movement = Vector2Scale(player.velocity, game_state->simulation_step);
-    Vector2 player_next_position = Vector2Add(player.transform.position, movement);
-
-    player.is_grounded = false;
-
-    if (player.velocity.y < 0 && player_next_position.y <= level_info.ground_level){
-        player.transform.position.y = level_info.ground_level - 1;
-        player.velocity.y = 0;
-        player.is_grounded = true;
     }
+
     game_state->player = player;
+}
+
+void simulate_collisions(GameState* game_state)
+{
+    game_state->player.is_grounded = false;
+
+    simulate_ground_collision(game_state);
+    simulate_platform_collisions(game_state);
+
+    //printf("%f\n", player.velocity.y);
+}
+
+void simulate(GameState* game_state)
+{
+    apply_player_input(game_state);
+
+    apply_gravity_to_player(game_state);
 
     simulate_collisions(game_state);
 
-    player = game_state->player;
-    movement = Vector2Scale(player.velocity, simulation_step);
-    player.transform.position = Vector2Add(player.transform.position, movement);
-    game_state->player = player;
+    apply_velocity_to_player_position(game_state);
 
     camera_follow_player(game_state);
 

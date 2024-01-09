@@ -5,16 +5,18 @@ ResourceContainer load_resources(const char* base_path)
 {
     printf("loading resources...\n");
 
-    ResourceContainer resource_container = {
-        player: {
-            path: TextFormat("%s\\player.png", base_path)
-        },
-        platform: {
-            path: TextFormat("%s\\platform.png", base_path)
-        },
-    };
-    resource_container.player.texture = LoadTexture(resource_container.player.path);
-    resource_container.platform.texture = LoadTexture(resource_container.platform.path);
+    ResourceContainer resource_container = CLITERAL(ResourceContainer) {};
+
+    #define LOAD_TEXTURE(variable, relative_path) \
+        const char* variable##_path = TextFormat("%s\\%s", base_path, relative_path); \
+        resource_container.variable = CLITERAL(Resource) { \
+            .path= variable##_path, \
+            .texture= LoadTexture(variable##_path) \
+        };
+
+    LOAD_TEXTURE(player, "player.png");
+    LOAD_TEXTURE(platform, "platform_default.png");
+    LOAD_TEXTURE(platform_jumper, "platform_jumper.png");
 
     printf("resources loaded successfully!\n");
     return resource_container;

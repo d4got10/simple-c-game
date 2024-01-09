@@ -60,13 +60,14 @@ GameState create_state()
     };
 
     level_info.platform_count = 10;
-    level_info.platforms = (MyTransform*) malloc(level_info.platform_count * sizeof(MyTransform));
+    level_info.platforms = (Platform*) malloc(level_info.platform_count * sizeof(Platform));
 
     for(int i = 0; i < level_info.platform_count; i++){
-        level_info.platforms[i].position.x = (2 * (i & 1) - 1) * 100;
-        level_info.platforms[i].position.y = (i + 1) * 125;
-        level_info.platforms[i].size.x = 200;
-        level_info.platforms[i].size.y = 50;
+        level_info.platforms[i].transform.position.x = (2 * (i & 1) - 1) * 100;
+        level_info.platforms[i].transform.position.y = (i + 1) * 125;
+        level_info.platforms[i].transform.size.x = 200;
+        level_info.platforms[i].transform.size.y = 50;
+        level_info.platforms[i].type = (i % 5 == 4) ? JUMPER : DEFAULT;
     }
 
     GameState game_state =

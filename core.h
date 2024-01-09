@@ -2,6 +2,11 @@
 
 #include "raylib.h"
 
+typedef enum {
+    DEFAULT,
+    JUMPER
+} PlatformType;
+
 typedef struct {
     Vector2 position;
     Vector2 size;
@@ -20,9 +25,14 @@ typedef struct {
 } Player;
 
 typedef struct {
+    PlatformType type;
+    MyTransform transform;
+} Platform;
+
+typedef struct {
     float ground_level;
     float gravity_force;
-    MyTransform* platforms;
+    Platform* platforms;
     int platform_count;
 } LevelInfo;
 
@@ -34,6 +44,7 @@ typedef struct{
 typedef struct {
     Resource player;
     Resource platform;
+    Resource platform_jumper;
 } ResourceContainer;
 
 typedef struct{
