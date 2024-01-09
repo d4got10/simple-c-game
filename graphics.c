@@ -81,6 +81,9 @@ void draw_platforms(GameState game_state)
             case JUMPER:
                 platform_texture = game_state.resources.platform_jumper.texture;
                 break;
+            case BOUNCY:
+                platform_texture = game_state.resources.platform_bouncy.texture;
+                break;
         }
 
         float scale = fminf(platforms[i].transform.size.x / platform_texture.width,

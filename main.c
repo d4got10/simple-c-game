@@ -24,7 +24,9 @@ int main(void)
     while(!WindowShouldClose())
     {
         game_state = apply_input(game_state);
-        simulate(&game_state);
+        if(!game_state.debugging.manual_mode || game_state.debugging.should_step_forward) {
+            simulate(&game_state);
+        }
         draw_graphics(game_state);
     }
 
@@ -39,7 +41,8 @@ GameState create_state()
         return CLITERAL(GameState){};
     }
 
-    const char *resources_directory = TextFormat("%s\\resources", working_directory);
+    char resources_directory[256];
+    TextCopy(resources_directory, TextFormat("%s\\resources", working_directory));
     ResourceContainer resources = load_resources(resources_directory);
 
     Player player = {
@@ -67,7 +70,13 @@ GameState create_state()
         level_info.platforms[i].transform.position.y = (i + 1) * 125;
         level_info.platforms[i].transform.size.x = 200;
         level_info.platforms[i].transform.size.y = 50;
-        level_info.platforms[i].type = (i % 5 == 4) ? JUMPER : DEFAULT;
+        if (i % 5 == 4) {
+            level_info.platforms[i].type = JUMPER;
+        } else if (i % 5 == 3) {
+            level_info.platforms[i].type = BOUNCY;
+        } else {
+            level_info.platforms[i].type = DEFAULT;
+        }
     }
 
     GameState game_state =

@@ -13,6 +13,11 @@ GameState apply_input(GameState game_state)
     player.wants_to_jump = IsKeyDown(KEY_UP);
     player.wants_to_drop = IsKeyPressed(KEY_DOWN);
 
+    if(IsKeyPressed(KEY_F5))
+        game_state.debugging.manual_mode = !game_state.debugging.manual_mode;
+
+    game_state.debugging.should_step_forward = IsKeyPressed(KEY_F8) || IsKeyDown(KEY_F9);
+
     game_state.player = player;
 
     return game_state;

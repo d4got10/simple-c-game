@@ -4,7 +4,8 @@
 
 typedef enum {
     DEFAULT,
-    JUMPER
+    JUMPER,
+    BOUNCY
 } PlatformType;
 
 typedef struct {
@@ -45,7 +46,13 @@ typedef struct {
     Resource player;
     Resource platform;
     Resource platform_jumper;
+    Resource platform_bouncy;
 } ResourceContainer;
+
+typedef struct {
+    bool manual_mode;
+    bool should_step_forward;
+} Debugging;
 
 typedef struct{
     ResourceContainer resources;
@@ -53,4 +60,5 @@ typedef struct{
     Vector2 camera_position;
     LevelInfo level_info;
     float simulation_step;
+    Debugging debugging;
 } GameState;

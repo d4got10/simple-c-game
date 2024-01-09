@@ -37,17 +37,21 @@ void simulate_platform_collisions(GameState* game_state)
         {
             if (platforms[i].type == DEFAULT) {
                 player.velocity.y = 0;
-                player.transform.position.y = platforms[i].transform.position.y
-                                    + platforms[i].transform.size.y / 2
-                                    + player.transform.size.y / 2;
                 player.is_grounded = true;
             } else if (platforms[i].type == JUMPER) {
                 player.velocity.y = 1500;
-                player.transform.position.y = platforms[i].transform.position.y
-                                    + platforms[i].transform.size.y / 2
-                                    + player.transform.size.y / 2;
+            } else if (platforms[i].type == BOUNCY) {
+                if(player.velocity.y < -1000.0) {
+                    player.velocity.y *= -0.9;
+                } else {
+                    player.velocity.y = 0;
+                    player.is_grounded = true;
+                }
             }
 
+            player.transform.position.y = platforms[i].transform.position.y
+                                    + platforms[i].transform.size.y / 2
+                                    + player.transform.size.y / 2;
         }
 
         //printf("hit\n");
